@@ -38,9 +38,20 @@ async function connectToDatabase() {
         await client.connect(); // Connect to MongoDB
 
         const db = client.db("eStore");
+        const productCollection = db.collection("products");
         const phoneCollection = db.collection("phones");
+        const smartWatchCollection = db.collection("smartWatches");
+        const cameraCollection = db.collection("cameras");
+        const headphoneCollection = db.collection("headphones");
+        const computerCollection = db.collection("computers");
+        const consoleCollection = db.collection("consoles");
 
-        // insert new product in database
+        //get products data
+        app.get('/products', async (req, res) => {
+            const products = await productCollection.find().toArray();
+            res.send(products);
+        })
+        // insert new phone in database
         app.post('/phones', async (req, res) => {
             const product = req.body;
             console.log(product)
@@ -56,12 +67,141 @@ async function connectToDatabase() {
 
             }
         })
+        // insert new smartwatch in database
+        app.post('/smartwatches', async (req, res) => {
+            const product = req.body;
+            console.log(product)
+            try {
+                const result = await smartWatchCollection.insertOne(product);
+                res.send({ insertedId: result.insertedId });
+                console.log(result);
 
-        // get products from database
-        app.get('/products', async (req, res) => {
-            const result = await phoneCollection.find().toArray();
+            }
+            catch (error) {
+                console.error('Error adding product', error);
+                res.send({ error: 'Failed to add product' })
+
+            }
+        })
+        // insert new camera in database
+        app.post('/cameras', async (req, res) => {
+            const product = req.body;
+            console.log(product)
+            try {
+                const result = await cameraCollection.insertOne(product);
+                res.send({ insertedId: result.insertedId });
+                console.log(result);
+
+            }
+            catch (error) {
+                console.error('Error adding product', error);
+                res.send({ error: 'Failed to add product' })
+
+            }
+        })
+        // insert new headphone in database
+        app.post('/headphones', async (req, res) => {
+            const product = req.body;
+            console.log(product)
+            try {
+                const result = await headphoneCollection.insertOne(product);
+                res.send({ insertedId: result.insertedId });
+                console.log(result);
+
+            }
+            catch (error) {
+                console.error('Error adding product', error);
+                res.send({ error: 'Failed to add product' })
+
+            }
+        })
+        // insert new computer in database
+        app.post('/computers', async (req, res) => {
+            const product = req.body;
+            console.log(product)
+            try {
+                const result = await computerCollection.insertOne(product);
+                res.send({ insertedId: result.insertedId });
+                console.log(result);
+
+            }
+            catch (error) {
+                console.error('Error adding product', error);
+                res.send({ error: 'Failed to add product' })
+
+            }
+        })
+        // insert new console in database
+        app.post('/consoles', async (req, res) => {
+            const product = req.body;
+            console.log(product)
+            try {
+                const result = await consoleCollection.insertOne(product);
+                res.send({ insertedId: result.insertedId });
+                console.log(result);
+
+            }
+            catch (error) {
+                console.error('Error adding product', error);
+                res.send({ error: 'Failed to add product' })
+
+            }
+        })
+
+        //get products from the phones collection based on status
+
+        app.get('/phones', async (req, res) => {
+            const status = req.query.status;
+            const query = status ? { status: status } : {};
+            const result = await phoneCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // get products from the smartwatches collection based on status
+
+        app.get('/smartWatches', async (req, res) => {
+            const status = req.query.status;
+            const query = status ? { status: status } : {};
+            const result = await smartWatchCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // get products from the cameras collection based on status
+
+        app.get('/cameras', async (req, res) => {
+            const status = req.query.status;
+            const query = status ? { status: status } : {};
+            const result = await cameraCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // get products from the headphones collection based on status
+
+        app.get('/headphones', async (req, res) => {
+            const status = req.query.status;
+            const query = status ? { status: status } : {};
+            const result = await headphoneCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // get products from the computers collection based on status
+
+        app.get('/computers', async (req, res) => {
+            const status = req.query.status;
+            const query = status ? { status: status } : {};
+            const result = await computerCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // get products from the consoles collection based on status
+
+        app.get('/consoles', async (req, res) => {
+            const status = req.query.status;
+            const query = status ? { status: status } : {};
+            const result = await consoleCollection.find(query).toArray();
             res.send(result)
         })
+
 
 
 
