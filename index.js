@@ -2,8 +2,8 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 require('dotenv').config(); // Load environment variables from .env file
-const port = process.env.PORT || 5445; // Default port if not specified in environment variables
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const port = process.env.PORT || 5555; // Default port if not specified in environment variables
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
 // Middleware setup
@@ -202,14 +202,98 @@ async function connectToDatabase() {
             res.send(result)
         })
 
+        // get products from the phones collection based on id
+
+        app.get('/phones/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await phoneCollection.findOne(query);
+                res.send(result);
+            } catch (error) {
+                console.error('Error fetching data: ', error);
+                res.status(500).send({ message: 'Failed to fetch data' });
+            }
+        })
+
+        //get products from the smartWatches collections based on id
+
+        app.get('/smartwatches/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await smartWatchCollection.findOne(query);
+                res.send(result);
+            } catch (error) {
+                console.error('Error fetching data: ', error);
+                res.status(500).send({ message: 'Failed to fetch data' });
+            }
+        })
+
+        //get products from the cameras collections based on id
+
+        app.get('/cameras/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await cameraCollection.findOne(query);
+                res.send(result);
+            } catch (error) {
+                console.error('Error fetching data: ', error);
+                res.status(500).send({ message: 'Failed to fetch data' });
+            }
+        })
+
+        //get products from the headphones collections based on id
+
+        app.get('/headphones/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await headphoneCollection.findOne(query);
+                res.send(result);
+            } catch (error) {
+                console.error('Error fetching data: ', error);
+                res.status(500).send({ message: 'Failed to fetch data' });
+            }
+        })
+
+        //get products from the computers collections based on id
+
+        app.get('/computers/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await computerCollection.findOne(query);
+                res.send(result);
+            } catch (error) {
+                console.error('Error fetching data: ', error);
+                res.status(500).send({ message: 'Failed to fetch data' });
+            }
+        })
+
+        //get products from the consoles collections based on id
+
+        app.get('/consoles/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await consoleCollection.findOne(query);
+                res.send(result);
+            } catch (error) {
+                console.error('Error fetching data: ', error);
+                res.status(500).send({ message: 'Failed to fetch data' });
+            }
+        })
 
 
 
-
-
-
-
-
+        // const phoneCollection = db.collection("phones");
+        // const smartWatchCollection = db.collection("smartWatches");
+        // const cameraCollection = db.collection("cameras");
+        // const headphoneCollection = db.collection("headphones");
+        // const computerCollection = db.collection("computers");
+        // const consoleCollection = db.collection("consoles");
 
 
         console.log('Connected to MongoDB successfully');
