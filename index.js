@@ -202,90 +202,44 @@ async function connectToDatabase() {
             res.send(result)
         })
 
-        // get products from the phones collection based on id
 
-        app.get('/phones/:id', async (req, res) => {
-            const id = req.params.id;
+        // Generic route to fetch product by type and id
+        app.get('/:type/:id', async (req, res) => {
+            const { type, id } = req.params;
+
+            // Dynamically reference the correct collection based on the type parameter
+            let collection;
+            if (type === 'phone') {
+                collection = phoneCollection;
+            } else if (type === 'smartwatch') {
+                collection = smartWatchCollection;
+            } else if (type === 'camera') {
+                collection = cameraCollection;
+            } else if (type === 'headphone') {
+                collection = headphoneCollection;
+            } else if (type === 'computer') {
+                collection = computerCollection;
+            } else if (type === 'console') {
+                collection = consoleCollection;
+            } else {
+                return res.status(400).send({ message: 'Invalid product type' });
+            }
+
+            // Query the collection by the product ID
             const query = { _id: new ObjectId(id) };
+
             try {
-                const result = await phoneCollection.findOne(query);
-                res.send(result);
+                const result = await collection.findOne(query);
+                if (result) {
+                    res.send(result);
+                } else {
+                    res.status(404).send({ message: 'Product not found' });
+                }
             } catch (error) {
                 console.error('Error fetching data: ', error);
                 res.status(500).send({ message: 'Failed to fetch data' });
             }
-        })
-
-        //get products from the smartWatches collections based on id
-
-        app.get('/smartwatches/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            try {
-                const result = await smartWatchCollection.findOne(query);
-                res.send(result);
-            } catch (error) {
-                console.error('Error fetching data: ', error);
-                res.status(500).send({ message: 'Failed to fetch data' });
-            }
-        })
-
-        //get products from the cameras collections based on id
-
-        app.get('/cameras/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            try {
-                const result = await cameraCollection.findOne(query);
-                res.send(result);
-            } catch (error) {
-                console.error('Error fetching data: ', error);
-                res.status(500).send({ message: 'Failed to fetch data' });
-            }
-        })
-
-        //get products from the headphones collections based on id
-
-        app.get('/headphones/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            try {
-                const result = await headphoneCollection.findOne(query);
-                res.send(result);
-            } catch (error) {
-                console.error('Error fetching data: ', error);
-                res.status(500).send({ message: 'Failed to fetch data' });
-            }
-        })
-
-        //get products from the computers collections based on id
-
-        app.get('/computers/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            try {
-                const result = await computerCollection.findOne(query);
-                res.send(result);
-            } catch (error) {
-                console.error('Error fetching data: ', error);
-                res.status(500).send({ message: 'Failed to fetch data' });
-            }
-        })
-
-        //get products from the consoles collections based on id
-
-        app.get('/consoles/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: new ObjectId(id) };
-            try {
-                const result = await consoleCollection.findOne(query);
-                res.send(result);
-            } catch (error) {
-                console.error('Error fetching data: ', error);
-                res.status(500).send({ message: 'Failed to fetch data' });
-            }
-        })
-
+        });
 
 
         // const phoneCollection = db.collection("phones");
