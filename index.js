@@ -45,12 +45,14 @@ async function connectToDatabase() {
         const headphoneCollection = db.collection("headphones");
         const computerCollection = db.collection("computers");
         const consoleCollection = db.collection("consoles");
+        const cartCollection = db.collection("cart");
 
         //get products data
         app.get('/products', async (req, res) => {
             const products = await productCollection.find().toArray();
             res.send(products);
         })
+
         // insert new phone in database
         app.post('/phones', async (req, res) => {
             const product = req.body;
@@ -67,6 +69,7 @@ async function connectToDatabase() {
 
             }
         })
+
         // insert new smartwatch in database
         app.post('/smartwatches', async (req, res) => {
             const product = req.body;
@@ -83,6 +86,7 @@ async function connectToDatabase() {
 
             }
         })
+
         // insert new camera in database
         app.post('/cameras', async (req, res) => {
             const product = req.body;
@@ -99,6 +103,7 @@ async function connectToDatabase() {
 
             }
         })
+
         // insert new headphone in database
         app.post('/headphones', async (req, res) => {
             const product = req.body;
@@ -115,6 +120,7 @@ async function connectToDatabase() {
 
             }
         })
+
         // insert new computer in database
         app.post('/computers', async (req, res) => {
             const product = req.body;
@@ -131,6 +137,7 @@ async function connectToDatabase() {
 
             }
         })
+
         // insert new console in database
         app.post('/consoles', async (req, res) => {
             const product = req.body;
@@ -241,13 +248,48 @@ async function connectToDatabase() {
             }
         });
 
+        // insert cart products in database
+        app.post('/cart', async (req, res) => {
+            const product = req.body;
+            console.log(product)
+            try {
+                const result = await cartCollection.insertOne(product);
+                res.send({ insertedId: result.insertedId });
+                console.log(result);
 
-        // const phoneCollection = db.collection("phones");
-        // const smartWatchCollection = db.collection("smartWatches");
-        // const cameraCollection = db.collection("cameras");
-        // const headphoneCollection = db.collection("headphones");
-        // const computerCollection = db.collection("computers");
-        // const consoleCollection = db.collection("consoles");
+            }
+            catch (error) {
+                console.error('Error adding product', error);
+                res.send({ error: 'Failed to add product' })
+
+            }
+        })
+
+        // get cart data
+
+        app.get('/cart', async (req, res) => {
+            const status = req.query.status;
+            const query = status ? { status: status } : {};
+            const result = await cartCollection.find(query).toArray();
+            res.send(result)
+        })
+
+        // get single user cart data
+
+        app.get('/cart/email/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await cartCollection.find(query).toArray();
+
+            if (result.length === 0) {
+                return res.status(404).send({ message: "No products found for this email." });
+            }
+
+            res.send(result);
+        });
+
+
+
 
 
         console.log('Connected to MongoDB successfully');
