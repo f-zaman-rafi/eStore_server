@@ -1,10 +1,11 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-require('dotenv').config(); // Load environment variables from .env file
-const port = process.env.PORT || 5555; // Default port if not specified in environment variables
+require('dotenv').config();
+const port = process.env.PORT || 5555;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
+const jwt = require('jsonwebtoken')
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET
 
 // Middleware setup
 const corsOptions = {
@@ -13,8 +14,8 @@ const corsOptions = {
     optionSuccessStatus: 200,
     methods: ["GET", "POST", "PUT", "DELETE"],
 };
-app.use(cors(corsOptions)); // Enable Cross-Origin Resource Sharing
-app.use(express.json()); // Parse JSON bodies
+app.use(cors(corsOptions));
+app.use(express.json());
 
 
 // MongoDB connection URI
@@ -46,6 +47,45 @@ async function connectToDatabase() {
         const computerCollection = db.collection("computers");
         const consoleCollection = db.collection("consoles");
         const cartCollection = db.collection("cart");
+
+
+
+
+        // jwt related api
+        app.post('/jwt', async (req, res) => {
+            try {
+                const userInfo = req.body;
+                console.log(userInfo);
+                const token = jwt.sign(userInfo, ACCESS_TOKEN_SECRET, {
+                    expiresIn: '24h'
+                });
+
+                // Set the jwt as an HTTP-only cookie
+                res.cookie('access-token', token, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    maxAge: 24 * 60 * 60 * 1000,
+                    path: '/',
+                    sameSite: 'None',
+                });
+
+                console.log('User logged in');
+                res.send({ message: 'Token set in cookies' });
+            } catch (error) {
+                console.error('Error generating JWT:', error);
+                res.status(500).send({ message: 'Failed to create token' });
+            }
+        });
+
+
+        app.post('/logout', (req, res) => {
+            res.clearCookie('access-token');
+            console.log('User logged out.');
+            res.send({ message: 'Logout successful' });
+        });
+
+
+
 
         //get products data
         app.get('/products', async (req, res) => {
