@@ -1,11 +1,12 @@
 const express = require('express');
-const app = express();
 const cors = require('cors');
-require('dotenv').config();
-const port = process.env.PORT || 5555;
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken')
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET
+const cookieParser = require('cookie-parser');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+require('dotenv').config();
+const app = express();
+const port = process.env.PORT || 5555;
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 // Middleware setup
 const corsOptions = {
@@ -16,6 +17,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
 
 // MongoDB connection URI
@@ -61,14 +63,15 @@ async function connectToDatabase() {
                 });
 
                 // Set the jwt as an HTTP-only cookie
-                res.cookie('access-token', token, {
+
+                res.cookie('token', token, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === 'production',
                     maxAge: 24 * 60 * 60 * 1000,
                     path: '/',
-                    sameSite: 'None',
+                    sameSite: 'strict',
                 });
-
+                console.log(req.cookies.token);
                 console.log('User logged in');
                 res.send({ message: 'Token set in cookies' });
             } catch (error) {
@@ -79,7 +82,7 @@ async function connectToDatabase() {
 
 
         app.post('/logout', (req, res) => {
-            res.clearCookie('access-token');
+            res.clearCookie('token');
             console.log('User logged out.');
             res.send({ message: 'Logout successful' });
         });
@@ -308,6 +311,7 @@ async function connectToDatabase() {
         // get cart data
 
         app.get('/cart', async (req, res) => {
+
             const status = req.query.status;
             const query = status ? { status: status } : {};
             const result = await cartCollection.find(query).toArray();
