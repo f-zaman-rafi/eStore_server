@@ -71,7 +71,8 @@ async function connectToDatabase() {
                     path: '/',
                     sameSite: 'strict',
                 });
-                console.log(req.cookies.token);
+
+                // console.log(req.cookies.token);
                 console.log('User logged in');
                 res.send({ message: 'Token set in cookies' });
             } catch (error) {
@@ -291,25 +292,28 @@ async function connectToDatabase() {
             }
         });
 
-        // insert cart products in database
+        // Add or update cart item based on email and product_id
         app.post('/cart', async (req, res) => {
-            const product = req.body;
-            console.log(product)
-            try {
-                const result = await cartCollection.insertOne(product);
-                res.send({ insertedId: result.insertedId });
-                console.log(result);
+            const { email, product_id, quantity } = req.body;
 
-            }
-            catch (error) {
-                console.error('Error adding product', error);
-                res.send({ error: 'Failed to add product' })
+            const existingCartItem = await cartCollection.findOne({ email, product_id });
 
+            if (existingCartItem) {
+                const updatedQuantity = existingCartItem.quantity + quantity;
+                const result = await cartCollection.updateOne(
+                    { email, product_id },
+                    { $set: { quantity: updatedQuantity } }
+                );
+                return res.send({ message: "Quantity updated successfully", result });
+            } else {
+                const newItem = { email, product_id, quantity };
+                const result = await cartCollection.insertOne(newItem);
+                return res.send({ message: "Item added to cart successfully", result });
             }
-        })
+        });
+
 
         // get cart data
-
         app.get('/cart', async (req, res) => {
 
             const status = req.query.status;
@@ -331,6 +335,26 @@ async function connectToDatabase() {
 
             res.send(result);
         });
+
+        // // Check if a specific product exists in the user's cart
+        // app.get('/cart/item', async (req, res) => {
+        //     const { email, product_id } = req.query;
+        //     const query = { email: email, product_id: product_id };
+        //     const result = await cartCollection.findOne(query);
+        //     res.send(result); // Sends null if not found
+        // });
+
+        // // Update quantity of a specific cart item by email and product_id
+        // app.put('/cart/updated-quantity', async (req, res) => {
+        //     const { email, product_id, quantity } = req.body;
+        //     const query = { email: email, product_id: product_id };
+        //     const update = {
+        //         $set: { quantity: quantity }
+        //     };
+        //     const result = await cartCollection.updateOne(query, update);
+        //     res.send(result);
+        // });
+
 
 
 
