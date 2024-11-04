@@ -51,6 +51,17 @@ async function connectToDatabase() {
         const cartCollection = db.collection("cart");
 
 
+        // JWT middleware after database connection but before routes
+        function authenticateToken(req, res, next) {
+            const token = req.cookies.token;
+            if (!token) return res.sendStatus(401);
+
+            jwt.verify(token, ACCESS_TOKEN_SECRET, (err, user) => {
+                if (err) return res.sendStatus(403);
+                req.user = user;
+                next();
+            });
+        }
 
 
         // jwt related api
@@ -292,21 +303,22 @@ async function connectToDatabase() {
             }
         });
 
-        // Add or update cart item based on email and product_id
-        app.post('/cart', async (req, res) => {
-            const { email, product_id, quantity } = req.body;
 
-            const existingCartItem = await cartCollection.findOne({ email, product_id });
+        // Add or update cart item based on email and product_id
+        app.post('/cart', authenticateToken, async (req, res) => {
+            const { email, product_id, quantity, type, image, model, price, varient } = req.body;
+
+            const existingCartItem = await cartCollection.findOne({ email, product_id, varient });
 
             if (existingCartItem) {
                 const updatedQuantity = existingCartItem.quantity + quantity;
                 const result = await cartCollection.updateOne(
-                    { email, product_id },
+                    { email, product_id, varient },
                     { $set: { quantity: updatedQuantity } }
                 );
                 return res.send({ message: "Quantity updated successfully", result });
             } else {
-                const newItem = { email, product_id, quantity };
+                const newItem = { email, product_id, quantity, type, image, model, price, varient };
                 const result = await cartCollection.insertOne(newItem);
                 return res.send({ message: "Item added to cart successfully", result });
             }
@@ -314,7 +326,7 @@ async function connectToDatabase() {
 
 
         // get cart data
-        app.get('/cart', async (req, res) => {
+        app.get('/cart', authenticateToken, async (req, res) => {
 
             const status = req.query.status;
             const query = status ? { status: status } : {};
@@ -324,7 +336,7 @@ async function connectToDatabase() {
 
         // get single user cart data
 
-        app.get('/cart/email/:email', async (req, res) => {
+        app.get('/cart/email/:email', authenticateToken, async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
             const result = await cartCollection.find(query).toArray();
@@ -335,28 +347,6 @@ async function connectToDatabase() {
 
             res.send(result);
         });
-
-        // // Check if a specific product exists in the user's cart
-        // app.get('/cart/item', async (req, res) => {
-        //     const { email, product_id } = req.query;
-        //     const query = { email: email, product_id: product_id };
-        //     const result = await cartCollection.findOne(query);
-        //     res.send(result); // Sends null if not found
-        // });
-
-        // // Update quantity of a specific cart item by email and product_id
-        // app.put('/cart/updated-quantity', async (req, res) => {
-        //     const { email, product_id, quantity } = req.body;
-        //     const query = { email: email, product_id: product_id };
-        //     const update = {
-        //         $set: { quantity: quantity }
-        //     };
-        //     const result = await cartCollection.updateOne(query, update);
-        //     res.send(result);
-        // });
-
-
-
 
 
 
