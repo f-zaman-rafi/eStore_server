@@ -295,6 +295,30 @@ async function connectToDatabase() {
       }
     });
 
+    app.put('/cart/update-quantities', authenticateToken, async (req, res) => {
+      const { quantities } = req.body;
+
+      try {
+        await Promise.all(
+          Object.entries(quantities).map(([productId, quantity]) =>
+            cartCollection.updateOne(
+              { product_id: productId, email: req.user.email },
+              { $set: { quantity } }
+            )
+          )
+        );
+        res.status(200).json({ message: 'Quantities updated successfully.' });
+      } catch (error) {
+        console.error('Error updating quantities:', error);
+        res.status(500).json({ message: 'Failed to update quantities.' });
+      }
+    });
+
+
+    // module.exports = router;
+
+
+
     // // Add or update cart item based on email and product_id
     // app.post("/cart", authenticateToken, async (req, res) => {
     //   const {
