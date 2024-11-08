@@ -276,33 +276,34 @@ async function connectToDatabase() {
 
     // Add or update cart item based on email and product_id
     app.post("/cart", authenticateToken, async (req, res) => {
-      const { email, product_id, quantity, type, varient } = req.body;
-      const existingCartItem = await cartCollection.findOne({ email, product_id, varient });
+      const { email, product_id, quantity, type, variant } = req.body;
+      const existingCartItem = await cartCollection.findOne({ email, product_id, variant });
 
       if (existingCartItem) {
         const updatedQuantity = existingCartItem.quantity + quantity;
         const result = await cartCollection.updateOne(
-          { email, product_id, varient },
+          { email, product_id, variant },
           { $set: { quantity: updatedQuantity } }
         );
         return res.send({ message: "Quantity updated successfully", result });
       }
 
       else {
-        const newItem = { email, product_id, quantity, type, varient };
+        const newItem = { email, product_id, quantity, type, variant };
         const result = await cartCollection.insertOne(newItem);
         return res.send({ message: "Item added to cart successfully", result });
       }
     });
 
+    // update quantities from cart page
     app.put('/cart/update-quantities', authenticateToken, async (req, res) => {
       const { quantities } = req.body;
 
       try {
         await Promise.all(
-          Object.entries(quantities).map(([productId, quantity]) =>
+          Object.entries(quantities).map(([itemId, quantity]) =>
             cartCollection.updateOne(
-              { product_id: productId, email: req.user.email },
+              { _id: new ObjectId(itemId), email: req.user.email }, // Convert itemId to ObjectId
               { $set: { quantity } }
             )
           )
@@ -313,53 +314,6 @@ async function connectToDatabase() {
         res.status(500).json({ message: 'Failed to update quantities.' });
       }
     });
-
-
-    // module.exports = router;
-
-
-
-    // // Add or update cart item based on email and product_id
-    // app.post("/cart", authenticateToken, async (req, res) => {
-    //   const {
-    //     email,
-    //     product_id,
-    //     quantity,
-    //     type,
-    //     image,
-    //     model,
-    //     price,
-    //     varient,
-    //   } = req.body;
-
-    //   const existingCartItem = await cartCollection.findOne({
-    //     email,
-    //     product_id,
-    //     varient,
-    //   });
-
-    //   if (existingCartItem) {
-    //     const updatedQuantity = existingCartItem.quantity + quantity;
-    //     const result = await cartCollection.updateOne(
-    //       { email, product_id, varient },
-    //       { $set: { quantity: updatedQuantity } }
-    //     );
-    //     return res.send({ message: "Quantity updated successfully", result });
-    //   } else {
-    //     const newItem = {
-    //       email,
-    //       product_id,
-    //       quantity,
-    //       type,
-    //       image,
-    //       model,
-    //       price,
-    //       varient,
-    //     };
-    //     const result = await cartCollection.insertOne(newItem);
-    //     return res.send({ message: "Item added to cart successfully", result });
-    //   }
-    // });
 
     // get cart data
     app.get("/cart", authenticateToken, async (req, res) => {
@@ -384,6 +338,30 @@ async function connectToDatabase() {
 
       res.send(result);
     });
+
+    // Delete cart item
+    app.delete('/cart/:id', authenticateToken, async (req, res) => {
+      const { id } = req.params;
+      const email = req.user.email;
+
+      try {
+        // Remove the cart item with the specific _id for the authenticated user
+        const result = await cartCollection.deleteOne({
+          _id: new ObjectId(id),
+          email: email
+        });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: 'Cart item not found' });
+        }
+
+        res.status(200).json({ message: 'Cart item deleted successfully' });
+      } catch (error) {
+        console.error('Error deleting cart item:', error);
+        res.status(500).json({ message: 'Failed to delete cart item' });
+      }
+    });
+
 
     console.log("Connected to MongoDB successfully");
   } catch (error) {
