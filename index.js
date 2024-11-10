@@ -45,6 +45,7 @@ async function connectToDatabase() {
     const computerCollection = db.collection("computers");
     const consoleCollection = db.collection("consoles");
     const cartCollection = db.collection("cart");
+    const userCollection = db.collection("users");
 
     // JWT middleware after database connection but before routes
     function authenticateToken(req, res, next) {
@@ -62,7 +63,7 @@ async function connectToDatabase() {
     app.post("/jwt", async (req, res) => {
       try {
         const userInfo = req.body;
-        console.log(userInfo);
+        // console.log(userInfo);
         const token = jwt.sign(userInfo, ACCESS_TOKEN_SECRET, {
           expiresIn: "24h",
         });
@@ -78,7 +79,7 @@ async function connectToDatabase() {
         });
 
         // console.log(req.cookies.token);
-        console.log("User logged in");
+        // console.log("User logged in");
         res.send({ message: "Token set in cookies" });
       } catch (error) {
         console.error("Error generating JWT:", error);
@@ -88,7 +89,7 @@ async function connectToDatabase() {
 
     app.post("/logout", (req, res) => {
       res.clearCookie("token");
-      console.log("User logged out.");
+      // console.log("User logged out.");
       res.send({ message: "Logout successful" });
     });
 
@@ -101,11 +102,11 @@ async function connectToDatabase() {
     // insert new phone in database
     app.post("/phones", async (req, res) => {
       const product = req.body;
-      console.log(product);
+      // console.log(product);
       try {
         const result = await phoneCollection.insertOne(product);
         res.send({ insertedId: result.insertedId });
-        console.log(result);
+        // console.log(result);
       } catch (error) {
         console.error("Error adding product", error);
         res.send({ error: "Failed to add product" });
@@ -115,11 +116,11 @@ async function connectToDatabase() {
     // insert new smartwatch in database
     app.post("/smartwatches", async (req, res) => {
       const product = req.body;
-      console.log(product);
+      // console.log(product);
       try {
         const result = await smartWatchCollection.insertOne(product);
         res.send({ insertedId: result.insertedId });
-        console.log(result);
+        // console.log(result);
       } catch (error) {
         console.error("Error adding product", error);
         res.send({ error: "Failed to add product" });
@@ -129,11 +130,11 @@ async function connectToDatabase() {
     // insert new camera in database
     app.post("/cameras", async (req, res) => {
       const product = req.body;
-      console.log(product);
+      // console.log(product);
       try {
         const result = await cameraCollection.insertOne(product);
         res.send({ insertedId: result.insertedId });
-        console.log(result);
+        // console.log(result);
       } catch (error) {
         console.error("Error adding product", error);
         res.send({ error: "Failed to add product" });
@@ -143,11 +144,11 @@ async function connectToDatabase() {
     // insert new headphone in database
     app.post("/headphones", async (req, res) => {
       const product = req.body;
-      console.log(product);
+      // console.log(product);
       try {
         const result = await headphoneCollection.insertOne(product);
         res.send({ insertedId: result.insertedId });
-        console.log(result);
+        // console.log(result);
       } catch (error) {
         console.error("Error adding product", error);
         res.send({ error: "Failed to add product" });
@@ -157,11 +158,11 @@ async function connectToDatabase() {
     // insert new computer in database
     app.post("/computers", async (req, res) => {
       const product = req.body;
-      console.log(product);
+      // console.log(product);
       try {
         const result = await computerCollection.insertOne(product);
         res.send({ insertedId: result.insertedId });
-        console.log(result);
+        // console.log(result);
       } catch (error) {
         console.error("Error adding product", error);
         res.send({ error: "Failed to add product" });
@@ -169,13 +170,13 @@ async function connectToDatabase() {
     });
 
     // insert new console in database
-    app.post("/consoles", async (req, res) => {
+    app.post("/consoles", authenticateToken, async (req, res) => {
       const product = req.body;
-      console.log(product);
+      // console.log(product);
       try {
         const result = await consoleCollection.insertOne(product);
         res.send({ insertedId: result.insertedId });
-        console.log(result);
+        // console.log(result);
       } catch (error) {
         console.error("Error adding product", error);
         res.send({ error: "Failed to add product" });
@@ -362,6 +363,87 @@ async function connectToDatabase() {
       }
     });
 
+    // user info
+    app.post("/users", authenticateToken, async (req, res) => {
+      const { email, street, city, state, postal, phone } = req.body;
+
+      // Find user by email
+      const existingUser = await userCollection.findOne({ email });
+
+      if (existingUser) {
+        // Update user address if data exists
+        const updatedData = {
+          street,
+          city,
+          state,
+          postal,
+          phone,
+        };
+
+        const result = await userCollection.updateOne(
+          { email },
+          { $set: updatedData }
+        );
+
+        return res.send({
+          message: "User data updated successfully",
+          result,
+        });
+      } else {
+
+        const newUser = {
+          email,
+          street,
+          city,
+          state,
+          postal,
+          phone,
+        };
+
+        const result = await userCollection.insertOne(newUser);
+        return res.send({
+          message: "User data added successfully",
+          result,
+        });
+      }
+    });
+
+    // Get all users
+    app.get("/users", authenticateToken, async (req, res) => {
+      try {
+        const users = await userCollection.find().toArray();
+
+        if (users.length === 0) {
+          return res.status(404).send({ message: "No users found" });
+        }
+
+        res.send(users);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).send({ message: "An error occurred while retrieving users" });
+      }
+    });
+
+
+    app.get("/users/:email", async (req, res) => {
+      const { email } = req.params;  // Get email from URL parameter
+
+      try {
+        const user = await userCollection.findOne({ email });
+
+        if (!user) {
+          return res.status(404).send({ message: "User not found" });
+        }
+
+        res.send({ message: "User data retrieved successfully", user });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        res.status(500).send({ message: "An error occurred while retrieving user data" });
+      }
+    });
+
+
+
 
     console.log("Connected to MongoDB successfully");
   } catch (error) {
@@ -369,6 +451,7 @@ async function connectToDatabase() {
     process.exit(1); // Exit process on failure
   }
 }
+
 
 // Initiate the connection to MongoDB
 connectToDatabase();
