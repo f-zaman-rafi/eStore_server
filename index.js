@@ -365,23 +365,17 @@ async function connectToDatabase() {
 
     // user info
     app.post("/users", authenticateToken, async (req, res) => {
-      const { email, street, city, state, postal, phone } = req.body;
+      const { email, street, city, state, postal, phone, addressTitle } = req.body;
 
-      // Find user by email
-      const existingUser = await userCollection.findOne({ email });
+      // Find user address by email and title
+      const existingAddress = await userCollection.findOne({ email, addressTitle });
 
-      if (existingUser) {
-        // Update user address if data exists
-        const updatedData = {
-          street,
-          city,
-          state,
-          postal,
-          phone,
-        };
+      if (existingAddress) {
+        // Update existing address
+        const updatedData = { street, city, state, postal, phone };
 
         const result = await userCollection.updateOne(
-          { email },
+          { email, addressTitle },
           { $set: updatedData }
         );
 
@@ -390,15 +384,8 @@ async function connectToDatabase() {
           result,
         });
       } else {
-
-        const newUser = {
-          email,
-          street,
-          city,
-          state,
-          postal,
-          phone,
-        };
+        // Add new address entry
+        const newUser = { email, street, city, state, postal, phone, addressTitle };
 
         const result = await userCollection.insertOne(newUser);
         return res.send({
@@ -407,6 +394,7 @@ async function connectToDatabase() {
         });
       }
     });
+
 
     // Get all users
     app.get("/users", authenticateToken, async (req, res) => {
@@ -425,20 +413,41 @@ async function connectToDatabase() {
     });
 
 
-    app.get("/users/:email", async (req, res) => {
-      const { email } = req.params;  // Get email from URL parameter
+    app.get("/users/email/:email", authenticateToken, async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await userCollection.find(query).toArray();
+
+      if (result.length === 0) {
+        return res
+          .status(404)
+          .send({ message: "No products found for this email." });
+      }
+
+      res.send(result);
+    });
+
+
+    // Delete cart item
+    app.delete('/users/:id', authenticateToken, async (req, res) => {
+      const { id } = req.params;
+      const email = req.user.email;
 
       try {
-        const user = await userCollection.findOne({ email });
+        // Remove the cart item with the specific _id for the authenticated user
+        const result = await userCollection.deleteOne({
+          _id: new ObjectId(id),
+          email: email
+        });
 
-        if (!user) {
-          return res.status(404).send({ message: "User not found" });
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: 'Cart item not found' });
         }
 
-        res.send({ message: "User data retrieved successfully", user });
+        res.status(200).json({ message: 'Cart item deleted successfully' });
       } catch (error) {
-        console.error("Error fetching user data:", error);
-        res.status(500).send({ message: "An error occurred while retrieving user data" });
+        console.error('Error deleting cart item:', error);
+        res.status(500).json({ message: 'Failed to delete cart item' });
       }
     });
 
